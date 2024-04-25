@@ -16,6 +16,10 @@ public class Principal {
 		Scanner entrada = new Scanner(System.in);
 		//dato booleano que sirve para verificar si las respuestas de las variables son válidas
 		boolean verificarRespuesta;
+		//Objeto LocalTime que servirá para imprir la hora de la conversión de la moneda
+		LocalTime horaLocal = LocalTime.now();
+		//Objeto DateTimeFormatter que sirve para dar formato a la hora
+		DateTimeFormatter formato = DateTimeFormatter.ofPattern("HH:mm:ss");
 		//Arreglo que contiene las siglas de las monedas que se pueden consultar con este programa
 		String [] arregloMonedasValidas = { "ARS", "AUD", "BOB", "BRL", "CAD", "CHF", "CLP", "CNY", "COP", "CRC", "CUP",
 				"DKK", "DOP", "EUR", "GBP", "GTQ", "HKD", "HNL", "INR", "JPY", "KYD", "MXN", "NIO", "NZD", "PAB", "PEN",
@@ -113,9 +117,10 @@ public class Principal {
 			Gson jsonRecibido = new Gson();
 			RespuestaJson conversion = jsonRecibido.fromJson(jsonACadena, RespuestaJson.class);
 			/*Se usa el método transformarCantidad al que se le pasa el atributo cantidadAConvertir transformado a double
-			para realizar la operación y regresar el resultado como una cadena y se imprime en la consola*/
+			para realizar la operación y regresar el resultado como una cadena y se imprime en la consola junto con la
+			hora de la conversión*/
 			System.out.println("La conversión actual es: "
-					+ conversion.transformarCantidad(Double.parseDouble(cantidadAConvertir)));
+					+ conversion.transformarCantidad(Double.parseDouble(cantidadAConvertir) + " hora de la conversión: " + horaLocal.format(formato));;
 			//Se usa el método push de la clase MetodoPush para colocar el resultado de la operación dentro de un arreglo
 			arregloConsultas.push(conversion.transformarCantidad(Double.parseDouble(cantidadAConvertir)));
 			//Se usa el método imprimirArreglo para mostrar el contenido del arreglo en la consola
@@ -134,6 +139,8 @@ public class Principal {
 				System.out.println("Escribe una repuesta válida: [Si/No]");
 				seleccion = entrada.nextLine();
 			}
+			//Reinicio de la hora que imprimirá en consola
+			horaLocal = LocalTime.now();
 		//Declaración de condición que finaliza el ciclo
 		} while (seleccion.toLowerCase().equals("si"));
 		entrada.close();
