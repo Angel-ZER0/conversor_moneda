@@ -1,3 +1,4 @@
+//Importaciones y nombre del paquete
 package conversorMoneda.main;
 import java.io.IOException;
 import java.net.URI;
@@ -8,12 +9,13 @@ import java.util.Scanner;
 import com.google.gson.Gson;
 import conversorMoneda.utilidades.MetodoPush;
 import conversorMoneda.utilidades.RespuestaJson;
-
 public class Principal {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
 		//Objeto scanner para permitir interacción y registro con el usuario
 		Scanner entrada = new Scanner(System.in);
+		//Dato booleano que se usa para verificar la cantidad a convertir ingresada por el usuario
+		boolean verificarFormato = false;
 		//dato booleano que sirve para verificar si las respuestas de las variables son válidas
 		boolean verificarRespuesta;
 		//Objeto LocalTime que servirá para imprir la hora de la conversión de la moneda
@@ -87,64 +89,71 @@ public class Principal {
 
 			System.out.println("Ingresa la cantidad de " + arregloMonedasValidas[Integer.parseInt(seleccionMoneda) - 1]
 					+ " que deseas tranformar a " + arregloMonedasValidas[Integer.parseInt(seleccionTransformar) - 1]);
-			//uso del objeto scanner para registrar la respues del usuario
+			//uso del objeto scanner para registrar la respuesta del usuario
 			cantidadAConvertir = entrada.nextLine();
-			//ciclo while que implementa un booleano para verificar que la respuesta del usuario sea correcta
-			verificarRespuesta = cantidadAConvertir.matches("[0-9.]+");
-			while (verificarRespuesta == false) {
-				System.out.println("Ingresa la cantidad de "
-						+ arregloMonedasValidas[Integer.parseInt(seleccionMoneda) - 1] + " que deseas tranformar a "
-						+ arregloMonedasValidas[Integer.parseInt(seleccionTransformar) - 1]);
-				System.out.println("Ingresa solo números y un solo signo de punto de ser necesario: ");
-				cantidadAConvertir = entrada.nextLine();
-				verificarRespuesta = cantidadAConvertir.matches("[0-9.]+");
-			}
-			//Creacion de objeto HttpClient
+			//Ciclo do...while que se ejecuta en caso de registrar un exepción al convertir la respuesta a dato double
+			do {
+				verificarFormato = false;
+				try {
+					Double.parseDouble(cantidadAConvertir);
+				} catch (NumberFormatException e) {
+					System.out.println("Número invalido introducido, intenta de nuevo:");
+					verificarFormato = true;
+					cantidadAConvertir = entrada.nextLine();
+				}
+			} while (verificarFormato == true);
+			//Creacion de un nuevo HttpClient
 			HttpClient cliente = HttpClient.newHttpClient();
-			/*Creacion de objeto HttpRequest donde se coloca la uri y los parámetros de la misma, usando los datos de
-			seleccionMoneda y seleccionTransformar, tranformados a datos byte, restándole uno para de esa forma poder
-			ubicar la cadena dentro del arreglo arregloMonedasValidas que hace referencia a dichas monedas*/
+			/*Creacion de una nueva peticion a la URI especificada, usando los datos del arreglo declarado anteriormente*/
 			HttpRequest peticion = HttpRequest.newBuilder()
 					.uri(URI.create("https://v6.exchangerate-api.com/v6/79293fd506db95927a7a3e14/pair/"
 							+ arregloMonedasValidas[Byte.parseByte(seleccionMoneda) - 1] + "/"
 							+ arregloMonedasValidas[Byte.parseByte(seleccionTransformar) - 1]))
 					.build();
-			//se envía la petición a la API y se guarda la respuesta en el objeto HttpResponse
+			/*Ejecución de la peticion a la URI resultante de la la petición y se guarda esta misma respuesta en el
+			objeto "respuesta" de la clase HttpResponse tranformado a String.*/
 			HttpResponse<String> respuesta = cliente.send(peticion, HttpResponse.BodyHandlers.ofString());
-			//Se guarda la respuesta del cuerpo en una nueva variable de jsonACadena de tipo String
+			//Pasando la "respuesta" de la petición a otra variable
 			String jsonACadena = respuesta.body();
-			//Se utiliza la librería Gson para transformar el dato jsonACadena a cadena en un objeto de la clase RespuestaJson
-			Gson jsonRecibido = new Gson();
-			RespuestaJson conversion = jsonRecibido.fromJson(jsonACadena, RespuestaJson.class);
-			/*Se usa el método transformarCantidad al que se le pasa el atributo cantidadAConvertir transformado a double
-			para realizar la operación y regresar el resultado como una cadena y se imprime en la consola junto con la
-			hora de la conversión*/
+			/*Se crea una Instancia de con la librería Gson para transformar el gson recibido como respuesta la petición
+			a un objeto de esta clase, configurando que los campos de propiedades del objeto json recibido se renombrarán
+			de de ser solo minúculas y palabras separadas con guiones bajos, a la convención de nombres de variables en
+			java, usando el método ".setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();" para
+			especificar esto mismo*/
+			Gson jsonRecibido = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+			/*Se tranforma la cadena "jsonACadena" a un objeto del tipo "RespuestaDto" la cual es un "Record" que
+			representará a este json usando las mismas propiedades y valores recibidas por el en la cadena, usando el
+			método .fromJson de la librería Gson */
+			RespuestaDto conversion = jsonRecibido.fromJson(jsonACadena, RespuestaDto.class);
+			/*Se usan los valores de la Instancia "conversion" creada con la "clase" (Record) RespuestaDto, para crear un objeto de la clase RespuestaJson para utilizar sus métodos */
+			RespuestaJson nuevaRespuesta = new RespuestaJson(conversion.baseCode(), conversion.targetCode(), Double.parseDouble(conversion.conversionRate()));
+			/*Se imprime en pantalla la cadena indicada más el método de la Instancia nueva respuesta que usa el dato
+			"cantidad a tranformar" tranformadp a dato double*/
 			System.out.println("La conversión actual es: "
-					+ conversion.transformarCantidad(Double.parseDouble(cantidadAConvertir) + " hora de la conversión: " + horaLocal.format(formato));;
-			//Se usa el método push de la clase MetodoPush para colocar el resultado de la operación dentro de un arreglo
-			arregloConsultas.push(conversion.transformarCantidad(Double.parseDouble(cantidadAConvertir)));
-			//Se usa el método imprimirArreglo para mostrar el contenido del arreglo en la consola
+					+ nuevaRespuesta.transformarCantidad(Double.parseDouble(cantidadAConvertir)));
+			/*se usa el método .push de la instancia arregloConsultas para colocar el resultado de la operación realizada con el método transformarCantidad*/	arregloConsultas.push(nuevaRespuesta.transformarCantidad(Double.parseDouble(cantidadAConvertir)) + " hora de la conversión: " + horaLocal.format(formato));
+			//Se imprime el contenido del arreglo
 			arregloConsultas.imprimirArreglo();
-
+			//impresión y consulta para continuar o no con la ejecución del código
 			System.out.print("""
 					¿Deseas realizar otra conversión?
 					introducir
 					Si: continuar
 					No: cerrar el programa
 					""");
-			//Uso del objeto scanner para registrar el valor que tendrá asignada la variable seleccion
 			seleccion = entrada.nextLine();
-			//uso de ciclo while para para evitar salidas del programa no deseadas
+			//ciclo para evitar salidas no deseadas del código
 			while (!seleccion.toLowerCase().equals("si") && !seleccion.toLowerCase().equals("no")) {
 				System.out.println("Escribe una repuesta válida: [Si/No]");
 				seleccion = entrada.nextLine();
 			}
-			//Reinicio de la hora que imprimirá en consola
+			//Reasignación de la variable horaLocal para actualizar su contenido
 			horaLocal = LocalTime.now();
-		//Declaración de condición que finaliza el ciclo
+		//Condición para terminar la ejecución del código
 		} while (seleccion.toLowerCase().equals("si"));
+		//terminaación de objeto Scanner
 		entrada.close();
+		//Mensaje salida del programa
 		System.out.println("Hasta la proxima.");
-
 	}
 }
