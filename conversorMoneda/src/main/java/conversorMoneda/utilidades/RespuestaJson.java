@@ -1,17 +1,11 @@
 package conversorMoneda.utilidades;
 import com.google.gson.annotations.SerializedName;
 public class RespuestaJson {
-	/*Uso de la anotación @SerializedName para colocar en el String monedaBase el valor de la propiedad del json
-	que tenga la propiedad "base_code"*/
-	@SerializedName("base_code")
+	/*Cadena que guardará el valo del json qque tenga la propiedad "base_code"*/
 	private String monedaBase;
-	/*Uso de la anotación @SerializedName para colocar en el String monedaConvertida valor de la propiedad del json
-	que tenga la propiedad "target_code"*/
-	@SerializedName("target_code")
+	/*Cadena que guardará el valo del json qque tenga la propiedad "target_code"*/
 	private String monedaConvertida;
-	/*Uso de la anotación @SerializedName para colocar en el String valorMoneda valor de la propiedad del json
-	que tenga la propiedad "conversion_rate"*/
-	@SerializedName("conversion_rate")
+	/*Cadena que guardará el valo del json qque tenga la propiedad "conversion_rate"*/
 	private double valorMoneda;
 	//Constructor sin atributos
 	public RespuestaJson(){
@@ -30,24 +24,15 @@ public class RespuestaJson {
 		String cadenaFinal = cantidadAConvertir + " " + this.monedaBase + " equivalen a " + String.format("%.4f", conversionFinal) + " " + this.monedaConvertida;
 		return cadenaFinal;
 	}
-	//Métodos get y set
+	//Métodos get
 	public String getMonedaBase() {
 		return monedaBase;
-	}
-	public void setMonedaBase(String monedaBase) {
-		this.monedaBase = monedaBase;
 	}
 	public String getMonedaConvertida() {
 		return monedaConvertida;
 	}
-	public void setMonedaConvertida(String monedaConvertida) {
-		this.monedaConvertida = monedaConvertida;
-	}
 	public double getValorMoneda() {
 		return valorMoneda;
-	}
-	public void setValorMoneda(double valorMoneda) {
-		this.valorMoneda = valorMoneda;
 	}
 	//Método to String
 	@Override
